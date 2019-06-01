@@ -158,6 +158,37 @@ func (srvconfig *ServiceConfig) getUrlMap() url.Values {
 		urlMap.Set("methods."+v.Name+"."+constant.WEIGHT_KEY, strconv.FormatInt(v.Weight, 10))
 	}
 
+	for _, value := range providerConfig.Protocols {
+		if value.Name != srvconfig.Protocol {
+			continue
+		}
+		dispatcher := value.Dispatcher
+		workPool := value.GrPool
+		if dispatcher == "" {
+			dispatcher = providerConfig.Dispatcher
+		}
+		if workPool == "" {
+			workPool = providerConfig.GrPool
+		}
+		urlMap.Set(constant.DISPATCHER_KEY, dispatcher)
+		urlMap.Set(constant.THREADPOOL_KEY, workPool)
+		if value.Grs == 0 {
+			urlMap.Set(constant.GRS_KEY, "")
+		} else {
+			urlMap.Set(constant.GRS_KEY, strconv.Itoa(value.Grs))
+		}
+		if value.CoreGrs == 0 {
+			urlMap.Set(constant.COREGRS_KEY, "")
+		} else {
+			urlMap.Set(constant.COREGRS_KEY, strconv.Itoa(value.CoreGrs))
+		}
+		if value.Queues == 0 {
+			urlMap.Set(constant.QUEUES_KEY, "")
+		} else {
+			urlMap.Set(constant.QUEUES_KEY, strconv.Itoa(value.Queues))
+		}
+	}
+
 	return urlMap
 
 }

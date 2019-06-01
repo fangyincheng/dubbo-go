@@ -17,6 +17,7 @@ package dubbo
 import (
 	"context"
 	"github.com/dubbogo/hessian2"
+	"log"
 	"sync"
 	"testing"
 	"time"
@@ -121,6 +122,12 @@ func TestClient_AsyncCall(t *testing.T) {
 	}, user)
 	assert.NoError(t, err)
 	assert.Equal(t, User{}, *user)
+
+	go func() {
+		time.Sleep(time.Second * 10)
+		log.Print("Timeout.")
+		lock.Unlock()
+	}()
 
 	// destroy
 	lock.Lock()

@@ -88,8 +88,8 @@ func (jp *JsonrpcProtocol) openServer(url common.URL) {
 }
 
 func GetProtocol() protocol.Protocol {
-	if jsonrpcProtocol != nil {
-		return jsonrpcProtocol
+	if jsonrpcProtocol == nil {
+		jsonrpcProtocol = NewDubboProtocol()
 	}
-	return NewDubboProtocol()
+	return jsonrpcProtocol
 }

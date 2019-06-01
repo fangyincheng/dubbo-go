@@ -1,6 +1,8 @@
 # dubbo server yaml configure file
 
 filter: ""
+dispatcher: "all"
+gr_pool: "limited"
 # application config
 application_config:
   organization : "ikurento.com"
@@ -47,6 +49,11 @@ protocols:
     # while using dubbo protocol, ip cannot is 127.0.0.1, because client of java-dubbo will get 'connection refuse'
     ip : "127.0.0.1"
     port : 20000
+    dispatcher: "all"
+    gr_pool: "limited"
+    queues: 0
+    corethreads: 200
+    grs: 200
 #-   name: "jsonrpc"
 #    ip: "127.0.0.1"
 #    port: 20001

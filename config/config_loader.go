@@ -159,9 +159,10 @@ func GetConsumerConfig() ConsumerConfig {
 /////////////////////////
 
 type ProviderConfig struct {
-	Filter       string `yaml:"filter" json:"filter,omitempty"`
-	ProxyFactory string `yaml:"proxy_factory" default:"default" json:"proxy_factory,omitempty"`
-
+	Filter            string            `yaml:"filter" json:"filter,omitempty"`
+	ProxyFactory      string            `yaml:"proxy_factory" default:"default" json:"proxy_factory,omitempty"`
+	Dispatcher        string            `yaml:"dispatcher" json:"dispatcher,omitempty"`
+	GrPool            string            `yaml:"gr_pool" json:"gr_pool,omitempty"`
 	ApplicationConfig ApplicationConfig `yaml:"application_config" json:"application_config,omitempty"`
 	Registries        []RegistryConfig  `yaml:"registries" json:"registries,omitempty"`
 	Services          []ServiceConfig   `yaml:"services" json:"services,omitempty"`
@@ -184,6 +185,11 @@ type ProtocolConfig struct {
 	Name        string `required:"true" yaml:"name"  json:"name,omitempty"`
 	Ip          string `required:"true" yaml:"ip"  json:"ip,omitempty"`
 	Port        string `required:"true" yaml:"port"  json:"port,omitempty"`
+	Dispatcher  string `yaml:"dispatcher" json:"dispatcher,omitempty"`
+	GrPool      string `yaml:"gr_pool" json:"gr_pool,omitempty"`
+	CoreGrs     int    `yaml:"core_grs" json:"core_grs,omitempty"`
+	Grs         int    `yaml:"grs" json:"grs,omitempty"`
+	Queues      int    `yaml:"queues" json:"queues,omitempty"`
 	ContextPath string `required:"true" yaml:"contextPath"  json:"contextPath,omitempty"`
 }
 

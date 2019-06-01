@@ -15,7 +15,6 @@
 package config
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common/proxy/proxy_factory"
 	"path/filepath"
 	"testing"
 )
@@ -28,6 +27,7 @@ import (
 	"github.com/dubbo/go-for-apache-dubbo/cluster/cluster_impl"
 	"github.com/dubbo/go-for-apache-dubbo/common"
 	"github.com/dubbo/go-for-apache-dubbo/common/extension"
+	"github.com/dubbo/go-for-apache-dubbo/common/proxy/proxy_factory"
 )
 
 func TestConfigLoader(t *testing.T) {

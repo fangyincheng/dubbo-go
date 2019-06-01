@@ -76,13 +76,15 @@ type Server struct {
 	conf      ServerConfig
 	tcpServer getty.Server
 	exporter  protocol.Exporter
+	handler   protocol.Handler
 }
 
-func NewServer(exporter protocol.Exporter) *Server {
+func NewServer(exporter protocol.Exporter, handler protocol.Handler) *Server {
 
 	s := &Server{
 		exporter: exporter,
 		conf:     *srvConf,
+		handler:  handler,
 	}
 
 	return s
@@ -114,7 +116,7 @@ func (s *Server) newSession(session getty.Session) error {
 	session.SetName(conf.GettySessionParam.SessionName)
 	session.SetMaxMsgLen(conf.GettySessionParam.MaxMsgLen)
 	session.SetPkgHandler(NewRpcServerPackageHandler())
-	session.SetEventListener(NewRpcServerHandler(s.exporter, conf.SessionNumber, conf.sessionTimeout))
+	session.SetEventListener(NewRpcServerHandler(s.handler, s.exporter, conf.SessionNumber, conf.sessionTimeout))
 	session.SetRQLen(conf.GettySessionParam.PkgRQSize)
 	session.SetWQLen(conf.GettySessionParam.PkgWQSize)
 	session.SetReadTimeout(conf.GettySessionParam.tcpReadTimeout)

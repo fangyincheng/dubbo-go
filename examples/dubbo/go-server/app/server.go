@@ -23,11 +23,11 @@ import (
 )
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common/logger"
 	"github.com/dubbogo/hessian2"
 )
 
 import (
+	"github.com/dubbo/go-for-apache-dubbo/common/logger"
 	"github.com/dubbo/go-for-apache-dubbo/config"
 	_ "github.com/dubbo/go-for-apache-dubbo/protocol/dubbo"
 	_ "github.com/dubbo/go-for-apache-dubbo/registry/protocol"
@@ -37,6 +37,8 @@ import (
 
 	_ "github.com/dubbo/go-for-apache-dubbo/cluster/cluster_impl"
 	_ "github.com/dubbo/go-for-apache-dubbo/cluster/loadbalance"
+	_ "github.com/dubbo/go-for-apache-dubbo/common/gr_pool/limited"
+	_ "github.com/dubbo/go-for-apache-dubbo/protocol/dispatcher/all"
 	_ "github.com/dubbo/go-for-apache-dubbo/registry/zookeeper"
 )
 

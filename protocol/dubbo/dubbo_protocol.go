@@ -16,6 +16,7 @@ package dubbo
 
 import (
 	"github.com/dubbo/go-for-apache-dubbo/common"
+	"github.com/dubbo/go-for-apache-dubbo/common/constant"
 	"github.com/dubbo/go-for-apache-dubbo/common/extension"
 	"github.com/dubbo/go-for-apache-dubbo/common/logger"
 	"github.com/dubbo/go-for-apache-dubbo/protocol"
@@ -77,14 +78,15 @@ func (dp *DubboProtocol) openServer(url common.URL) {
 	if !ok {
 		panic("[DubboProtocol]" + url.Key() + "is not existing")
 	}
-	srv := NewServer(exporter.(protocol.Exporter))
+	handler := extension.GetDispatcher(url.GetParam(constant.DISPATCHER_KEY, constant.DEFAULT_DISPATCHER)).Dispatch(NewDubboHandler(url), url)
+	srv := NewServer(exporter.(protocol.Exporter), handler)
 	dp.serverMap[url.Location] = srv
 	srv.Start(url)
 }
 
 func GetProtocol() protocol.Protocol {
-	if dubboProtocol != nil {
-		return dubboProtocol
+	if dubboProtocol == nil {
+		dubboProtocol = NewDubboProtocol()
 	}
-	return NewDubboProtocol()
+	return dubboProtocol
 }

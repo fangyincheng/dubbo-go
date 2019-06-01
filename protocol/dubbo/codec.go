@@ -18,12 +18,19 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"reflect"
 	"time"
 )
 
 import (
 	"github.com/dubbogo/hessian2"
 	perrors "github.com/pkg/errors"
+)
+
+import (
+	"github.com/dubbo/go-for-apache-dubbo/common"
+	"github.com/dubbo/go-for-apache-dubbo/common/constant"
+	"github.com/dubbo/go-for-apache-dubbo/common/logger"
 )
 
 // serial ID
@@ -49,6 +56,7 @@ const (
 type SequenceType int64
 
 type DubboPackage struct {
+	Codec   *hessian.HessianCodec
 	Header  hessian.DubboHeader
 	Service hessian.Service
 	Body    interface{}
@@ -68,6 +76,45 @@ func (p *DubboPackage) Marshal() (*bytes.Buffer, error) {
 	}
 
 	return bytes.NewBuffer(pkg), nil
+}
+
+func (p *DubboPackage) UnmarshalHeader(buf *bytes.Buffer) error {
+	codec := hessian.NewHessianCodec(bufio.NewReader(buf))
+
+	// read header
+	err := codec.ReadHeader(&p.Header)
+	if err != nil {
+		return perrors.WithStack(err)
+	}
+	p.Codec = codec
+	return nil
+}
+
+func (p *DubboPackage) UnmarshalBody(opts ...interface{}) error {
+	if p.Codec == nil {
+		return perrors.New("[UnmarshalBody] no codec!")
+	}
+
+	if len(opts) != 0 { // for client
+		if client, ok := opts[0].(*Client); ok {
+
+			r := client.pendingResponses[SequenceType(p.Header.ID)]
+			if r == nil {
+				return perrors.Errorf("pendingResponses[%v] = nil", p.Header.ID)
+			}
+			p.Body = client.pendingResponses[SequenceType(p.Header.ID)].reply
+		} else {
+			return perrors.Errorf("opts[0] is not *Client")
+		}
+	}
+
+	if p.Header.Type&hessian.PackageHeartbeat != 0x00 {
+		return nil
+	}
+
+	// read body
+	err := p.Codec.ReadBody(p.Body)
+	return perrors.WithStack(err)
 }
 
 func (p *DubboPackage) Unmarshal(buf *bytes.Buffer, opts ...interface{}) error {
@@ -131,4 +178,128 @@ func (r PendingResponse) GetCallResponse() CallResponse {
 		ReadStart: r.readStart,
 		Reply:     r.reply,
 	}
+}
+
+////////////////////////////////////////////
+// Codec
+////////////////////////////////////////////
+
+func DecodeBody(pkg interface{}) error {
+	req, ok := pkg.(*DubboPackage)
+	if !ok {
+		logger.Errorf("illegal pkg:%+v\n, it is %+v", pkg, reflect.TypeOf(pkg))
+		return perrors.New("invalid rpc request")
+	}
+	err := req.UnmarshalBody()
+	if err != nil {
+		return err
+	}
+	// convert params of request
+	content := req.Body.([]interface{}) // length of body should be 7
+	if len(content) > 0 {
+		var dubboVersion, argsTypes string
+		var args []interface{}
+		var attachments map[interface{}]interface{}
+		if content[0] != nil {
+			dubboVersion = content[0].(string)
+		}
+		if content[1] != nil {
+			req.Service.Path = content[1].(string)
+		}
+		if content[2] != nil {
+			req.Service.Version = content[2].(string)
+		}
+		if content[3] != nil {
+			req.Service.Method = content[3].(string)
+		}
+		if content[4] != nil {
+			argsTypes = content[4].(string)
+		}
+		if content[5] != nil {
+			args = content[5].([]interface{})
+		}
+		if content[6] != nil {
+			attachments = content[6].(map[interface{}]interface{})
+		}
+		if interf, ok := attachments[constant.INTERFACE_KEY]; ok {
+			req.Service.Interface = interf.(string)
+		}
+		req.Body = map[string]interface{}{
+			"dubboVersion": dubboVersion,
+			"argsTypes":    argsTypes,
+			"args":         args,
+			"service":      common.ServiceMap.GetService(DUBBO, req.Service.Interface),
+			"attachments":  attachments,
+		}
+	}
+
+	return nil
+}
+
+func Decode(data []byte) (interface{}, error) {
+	pkg := &DubboPackage{
+		Body: make([]interface{}, 7),
+	}
+
+	buf := bytes.NewBuffer(data)
+	err := pkg.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	// convert params of request
+	req := pkg.Body.([]interface{}) // length of body should be 7
+	if len(req) > 0 {
+		var dubboVersion, argsTypes string
+		var args []interface{}
+		var attachments map[interface{}]interface{}
+		if req[0] != nil {
+			dubboVersion = req[0].(string)
+		}
+		if req[1] != nil {
+			pkg.Service.Path = req[1].(string)
+		}
+		if req[2] != nil {
+			pkg.Service.Version = req[2].(string)
+		}
+		if req[3] != nil {
+			pkg.Service.Method = req[3].(string)
+		}
+		if req[4] != nil {
+			argsTypes = req[4].(string)
+		}
+		if req[5] != nil {
+			args = req[5].([]interface{})
+		}
+		if req[6] != nil {
+			attachments = req[6].(map[interface{}]interface{})
+		}
+		if interf, ok := attachments[constant.INTERFACE_KEY]; ok {
+			pkg.Service.Interface = interf.(string)
+		}
+		pkg.Body = map[string]interface{}{
+			"dubboVersion": dubboVersion,
+			"argsTypes":    argsTypes,
+			"args":         args,
+			"service":      common.ServiceMap.GetService(DUBBO, pkg.Service.Interface),
+			"attachments":  attachments,
+		}
+	}
+
+	return pkg, nil
+}
+
+func Encode(pkg interface{}) interface{} {
+	res, ok := pkg.(*DubboPackage)
+	if !ok {
+		logger.Errorf("illegal pkg:%+v\n, it is %+v", pkg, reflect.TypeOf(pkg))
+		return perrors.New("invalid rpc response")
+	}
+
+	buf, err := res.Marshal()
+	if err != nil {
+		logger.Warnf("binary.Write(res{%#v}) = err{%#v}", res, perrors.WithStack(err))
+		return perrors.WithStack(err)
+	}
+
+	return buf.Bytes()
 }

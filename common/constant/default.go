@@ -33,4 +33,9 @@ const (
 	DEFAULT_SERVICE_FILTERS   = "echo"
 	DEFAULT_REFERENCE_FILTERS = ""
 	ECHO                      = "$echo"
+	DEFAULT_THREADPOOR        = "limited"
+	DEFAULT_DISPATCHER        = "all"
+	DEFAULT_GRS               = "200"
+	DEFAULT_COREGRS           = "200"
+	DEFAULT_QUEUES            = "0"
 )

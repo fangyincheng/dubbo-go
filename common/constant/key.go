@@ -63,4 +63,9 @@ const (
 	APP_VERSION_KEY  = "app.version"
 	OWNER_KEY        = "owner"
 	ENVIRONMENT_KEY  = "environment"
+	DISPATCHER_KEY   = "dispatcher"
+	THREADPOOL_KEY   = "threadpool"
+	GRS_KEY          = "threads"
+	COREGRS_KEY      = "corethreads"
+	QUEUES_KEY       = "queues"
 )

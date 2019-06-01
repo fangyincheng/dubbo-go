@@ -15,6 +15,7 @@
 package dubbo
 
 import (
+	"log"
 	"sync"
 	"testing"
 	"time"
@@ -26,6 +27,8 @@ import (
 
 import (
 	"github.com/dubbo/go-for-apache-dubbo/common/constant"
+	_ "github.com/dubbo/go-for-apache-dubbo/common/gr_pool/limited"
+	_ "github.com/dubbo/go-for-apache-dubbo/protocol/dispatcher/all"
 	"github.com/dubbo/go-for-apache-dubbo/protocol/invocation"
 )
 
@@ -68,6 +71,12 @@ func TestDubboInvoker_Invoke(t *testing.T) {
 	inv.SetReply(nil)
 	res = invoker.Invoke(inv)
 	assert.EqualError(t, res.Error(), "request need @reply")
+
+	go func() {
+		time.Sleep(time.Second * 10)
+		log.Print("Timeout.")
+		lock.Unlock()
+	}()
 
 	// destroy
 	lock.Lock()

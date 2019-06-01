@@ -1,4 +1,4 @@
-// Copyright 2016-2019 hxmhlt
+// Copyright 2016-2019 Yincheng Fang
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,31 +11,34 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package proxy_factory
 
-import (
-	"testing"
-)
-
-import (
-	"github.com/stretchr/testify/assert"
-)
+package all
 
 import (
 	"github.com/dubbo/go-for-apache-dubbo/common"
+	"github.com/dubbo/go-for-apache-dubbo/common/extension"
 	"github.com/dubbo/go-for-apache-dubbo/protocol"
+	"github.com/dubbo/go-for-apache-dubbo/protocol/dispatcher"
 )
 
-func Test_GetProxy(t *testing.T) {
-	proxyFactory := NewDefaultProxyFactory()
-	url := common.NewURLWithOptions("testservice")
-	proxy := proxyFactory.GetProxy(protocol.NewBaseInvoker(*url), url)
-	assert.NotNil(t, proxy)
+const ALL = "all"
+
+func init() {
+	extension.SetDispatcher(ALL, GetDispatcher)
 }
 
-func Test_GetInvoker(t *testing.T) {
-	proxyFactory := NewDefaultProxyFactory()
-	url := common.NewURLWithOptions("testservice")
-	invoker := proxyFactory.GetInvoker(*url)
-	assert.True(t, invoker.IsAvailable())
+var allDispatcher *AllDispatcher
+
+type AllDispatcher struct {
+}
+
+func (ad *AllDispatcher) Dispatch(handler protocol.Handler, url common.URL) protocol.Handler {
+	return NewAllHandler(handler, url)
+}
+
+func GetDispatcher() dispatcher.Dispatcher {
+	if allDispatcher == nil {
+		allDispatcher = &AllDispatcher{}
+	}
+	return allDispatcher
 }

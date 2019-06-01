@@ -15,8 +15,6 @@
 package dubbo
 
 import (
-	"context"
-	"reflect"
 	"sync"
 	"time"
 )
@@ -28,11 +26,8 @@ import (
 )
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common"
-	"github.com/dubbo/go-for-apache-dubbo/common/constant"
 	"github.com/dubbo/go-for-apache-dubbo/common/logger"
 	"github.com/dubbo/go-for-apache-dubbo/protocol"
-	"github.com/dubbo/go-for-apache-dubbo/protocol/invocation"
 )
 
 // todo: WritePkg_Timeout will entry *.yml
@@ -127,6 +122,7 @@ func (h *RpcClientHandler) OnCron(session getty.Session) {
 ////////////////////////////////////////////
 
 type RpcServerHandler struct {
+	handler        protocol.Handler
 	exporter       protocol.Exporter
 	maxSessionNum  int
 	sessionTimeout time.Duration
@@ -134,8 +130,9 @@ type RpcServerHandler struct {
 	rwlock         sync.RWMutex
 }
 
-func NewRpcServerHandler(exporter protocol.Exporter, maxSessionNum int, sessionTimeout time.Duration) *RpcServerHandler {
+func NewRpcServerHandler(handler protocol.Handler, exporter protocol.Exporter, maxSessionNum int, sessionTimeout time.Duration) *RpcServerHandler {
 	return &RpcServerHandler{
+		handler:        handler,
 		exporter:       exporter,
 		maxSessionNum:  maxSessionNum,
 		sessionTimeout: sessionTimeout,
@@ -176,6 +173,7 @@ func (h *RpcServerHandler) OnClose(session getty.Session) {
 }
 
 func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
+
 	h.rwlock.Lock()
 	if _, ok := h.sessionMap[session]; ok {
 		h.sessionMap[session].reqNum++
@@ -192,44 +190,16 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 	// heartbeat
 	if p.Header.Type&hessian.PackageHeartbeat != 0x00 {
 		logger.Debugf("get rpc heartbeat request{header: %#v, service: %#v, body: %#v}", p.Header, p.Service, p.Body)
-		h.reply(session, p, hessian.PackageHeartbeat)
+		reply(session, p, hessian.PackageHeartbeat)
 		return
 	}
 
-	twoway := true
 	// not twoway
 	if p.Header.Type&hessian.PackageRequest_TwoWay == 0x00 {
-		twoway = false
-		h.reply(session, p, hessian.PackageResponse)
+		reply(session, p, hessian.PackageResponse)
 	}
 
-	invoker := h.exporter.GetInvoker()
-	if invoker != nil {
-		result := invoker.Invoke(invocation.NewRPCInvocationForProvider(p.Service.Method, p.Body.(map[string]interface{})["args"].([]interface{}), map[string]string{
-			constant.PATH_KEY: p.Service.Path,
-			//attachments[constant.GROUP_KEY] = url.GetParam(constant.GROUP_KEY, "")
-			constant.INTERFACE_KEY: p.Service.Interface,
-			constant.VERSION_KEY:   p.Service.Version,
-		}))
-		if err := result.Error(); err != nil {
-			p.Header.ResponseStatus = hessian.Response_SERVER_ERROR
-			p.Body = err
-			h.reply(session, p, hessian.PackageResponse)
-			return
-		}
-		if res := result.Result(); res != nil {
-			p.Header.ResponseStatus = hessian.Response_OK
-			p.Body = res
-			h.reply(session, p, hessian.PackageResponse)
-			return
-		}
-	}
-
-	h.callService(p, nil)
-	if !twoway {
-		return
-	}
-	h.reply(session, p, hessian.PackageResponse)
+	h.handler.Received(session, pkg)
 }
 
 func (h *RpcServerHandler) OnCron(session getty.Session) {
@@ -254,99 +224,5 @@ func (h *RpcServerHandler) OnCron(session getty.Session) {
 		delete(h.sessionMap, session)
 		h.rwlock.Unlock()
 		session.Close()
-	}
-}
-
-func (h *RpcServerHandler) callService(req *DubboPackage, ctx context.Context) {
-
-	defer func() {
-		if e := recover(); e != nil {
-			req.Header.ResponseStatus = hessian.Response_BAD_REQUEST
-			if err, ok := e.(error); ok {
-				logger.Errorf("callService panic: %#v", err)
-				req.Body = e.(error)
-			} else if err, ok := e.(string); ok {
-				logger.Errorf("callService panic: %#v", perrors.New(err))
-				req.Body = perrors.New(err)
-			} else {
-				logger.Errorf("callService panic: %#v", e)
-				req.Body = e
-			}
-		}
-	}()
-
-	svcIf := req.Body.(map[string]interface{})["service"]
-	if svcIf == nil {
-		logger.Errorf("service not found!")
-		req.Header.ResponseStatus = hessian.Response_SERVICE_NOT_FOUND
-		req.Body = perrors.New("service not found")
-		return
-	}
-	svc := svcIf.(*common.Service)
-	method := svc.Method()[req.Service.Method]
-	if method == nil {
-		logger.Errorf("method not found!")
-		req.Header.ResponseStatus = hessian.Response_SERVICE_NOT_FOUND
-		req.Body = perrors.New("method not found")
-		return
-	}
-
-	in := []reflect.Value{svc.Rcvr()}
-	if method.CtxType() != nil {
-		in = append(in, method.SuiteContext(ctx))
-	}
-
-	// prepare argv
-	argv := req.Body.(map[string]interface{})["args"]
-	if (len(method.ArgsType()) == 1 || len(method.ArgsType()) == 2 && method.ReplyType() == nil) && method.ArgsType()[0].String() == "[]interface {}" {
-		in = append(in, reflect.ValueOf(argv))
-	} else {
-		for i := 0; i < len(argv.([]interface{})); i++ {
-			in = append(in, reflect.ValueOf(argv.([]interface{})[i]))
-		}
-	}
-
-	// prepare replyv
-	var replyv reflect.Value
-	if method.ReplyType() == nil {
-		replyv = reflect.New(method.ArgsType()[len(method.ArgsType())-1].Elem())
-		in = append(in, replyv)
-	}
-
-	returnValues := method.Method().Func.Call(in)
-
-	var retErr interface{}
-	if len(returnValues) == 1 {
-		retErr = returnValues[0].Interface()
-	} else {
-		replyv = returnValues[0]
-		retErr = returnValues[1].Interface()
-	}
-	if retErr != nil {
-		req.Header.ResponseStatus = hessian.Response_SERVER_ERROR
-		req.Body = retErr.(error)
-	} else {
-		req.Body = replyv.Interface()
-	}
-}
-
-func (h *RpcServerHandler) reply(session getty.Session, req *DubboPackage, tp hessian.PackageType) {
-	resp := &DubboPackage{
-		Header: hessian.DubboHeader{
-			SerialID:       req.Header.SerialID,
-			Type:           tp,
-			ID:             req.Header.ID,
-			ResponseStatus: req.Header.ResponseStatus,
-		},
-	}
-
-	if req.Header.Type&hessian.PackageRequest != 0x00 {
-		resp.Body = req.Body
-	} else {
-		resp.Body = nil
-	}
-
-	if err := session.WritePkg(resp, WritePkg_Timeout); err != nil {
-		logger.Errorf("WritePkg error: %#v, %#v", perrors.WithStack(err), req.Header)
 	}
 }
