@@ -101,6 +101,13 @@ func main() {
 		println("response result: %v", user)
 	}
 
+	println("\n\n\nstart to test dubbo - getErr")
+	user = &User{}
+	err = conMap["com.ikurento.user.UserProvider"].GetRPCService().(*UserProvider).GetErr(context.TODO(), []interface{}{"A003"}, user)
+	if err != nil {
+		println("getErr - error: %v", err)
+	}
+
 	println("\n\n\nstart to test dubbo illegal method")
 	err = conMap["com.ikurento.user.UserProvider"].GetRPCService().(*UserProvider).GetUser1(context.TODO(), []interface{}{"A003"}, user)
 	if err != nil {

@@ -91,7 +91,7 @@ func (dh *DubboHandler) callService(req *DubboPackage, ctx context.Context) {
 
 	defer func() {
 		if e := recover(); e != nil {
-			req.Header.ResponseStatus = hessian.Response_BAD_REQUEST
+			req.Header.ResponseStatus = hessian.Response_SERVER_ERROR
 			if err, ok := e.(error); ok {
 				logger.Errorf("callService panic: %#v", err)
 				req.Body = e.(error)
@@ -108,7 +108,7 @@ func (dh *DubboHandler) callService(req *DubboPackage, ctx context.Context) {
 	svcIf := req.Body.(map[string]interface{})["service"]
 	if svcIf == nil {
 		logger.Errorf("service not found!")
-		req.Header.ResponseStatus = hessian.Response_SERVICE_NOT_FOUND
+		req.Header.ResponseStatus = hessian.Response_BAD_REQUEST
 		req.Body = perrors.New("service not found")
 		return
 	}
@@ -116,7 +116,7 @@ func (dh *DubboHandler) callService(req *DubboPackage, ctx context.Context) {
 	method := svc.Method()[req.Service.Method]
 	if method == nil {
 		logger.Errorf("method not found!")
-		req.Header.ResponseStatus = hessian.Response_SERVICE_NOT_FOUND
+		req.Header.ResponseStatus = hessian.Response_BAD_REQUEST
 		req.Body = perrors.New("method not found")
 		return
 	}
@@ -153,7 +153,7 @@ func (dh *DubboHandler) callService(req *DubboPackage, ctx context.Context) {
 		retErr = returnValues[1].Interface()
 	}
 	if retErr != nil {
-		req.Header.ResponseStatus = hessian.Response_SERVER_ERROR
+		req.Header.ResponseStatus = hessian.Response_OK
 		req.Body = retErr.(error)
 	} else {
 		req.Body = replyv.Interface()
