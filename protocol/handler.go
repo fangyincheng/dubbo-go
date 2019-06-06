@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common"
+	"github.com/apache/dubbo-go/common"
 )
 
 type Handler interface {

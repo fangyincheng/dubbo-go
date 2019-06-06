@@ -15,7 +15,7 @@
 package extension
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common/gr_pool"
+	"github.com/apache/dubbo-go/common/gr_pool"
 )
 
 var (

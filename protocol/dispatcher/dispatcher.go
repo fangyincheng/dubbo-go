@@ -15,9 +15,9 @@
 package dispatcher
 
 import (
-	"github.com/dubbo/go-for-apache-dubbo/common"
-	"github.com/dubbo/go-for-apache-dubbo/common/gr_pool"
-	"github.com/dubbo/go-for-apache-dubbo/protocol"
+	"github.com/apache/dubbo-go/common"
+	"github.com/apache/dubbo-go/common/gr_pool"
+	"github.com/apache/dubbo-go/protocol"
 )
 
 // Extension - Dispatcher

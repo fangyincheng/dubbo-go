@@ -14,7 +14,7 @@
 
 package gr_pool
 
-import "github.com/dubbo/go-for-apache-dubbo/common"
+import "github.com/apache/dubbo-go/common"
 
 // Extension - ThreadPool
 type GrPool interface {
