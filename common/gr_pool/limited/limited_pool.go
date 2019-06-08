@@ -36,7 +36,7 @@ func init() {
 }
 
 type FixPool struct {
-	keeper *Keeper
+	pool *Pool
 }
 
 func (fp *FixPool) CreatePool(url common.URL) {
@@ -55,15 +55,15 @@ func (fp *FixPool) CreatePool(url common.URL) {
 		logger.Errorf("[Execute] error: %v", err)
 		panic(err)
 	}
-	fp.keeper = NewKeeper(core, grs, queues)
+	fp.pool = NewPool(core, grs, queues)
 }
 
 func (fp *FixPool) Close() {
-	fp.keeper.Close()
+	fp.pool.Close()
 }
 
 func (fp *FixPool) Push(f func(index int)) error {
-	return fp.keeper.PushTask(f, 0)
+	return fp.pool.PushTask(f, 0)
 }
 
 func GetGrPool() gr_pool.GrPool {
