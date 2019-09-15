@@ -135,6 +135,14 @@ func test() {
 	}
 	println("response result: %v", user)
 
+	println("\n\n\nstart to test dubbo - getUser - overload")
+	user = &User{}
+	err = userProvider.GetUser2(context.TODO(), []interface{}{i, "overload"}, user)
+	if err != nil {
+		panic(err)
+	}
+	println("response result: %v", user)
+
 	println("\n\n\nstart to test dubbo - GetUser3")
 	err = userProvider.GetUser3()
 	if err != nil {
@@ -199,6 +207,14 @@ func test1() {
 	}
 	println("response result: %v", user)
 
+	println("\n\n\nstart to test dubbo - getUser - overload")
+	user = &User{}
+	err = userProvider1.GetUser2(context.TODO(), []interface{}{i, "overload"}, user)
+	if err != nil {
+		panic(err)
+	}
+	println("response result: %v", user)
+
 	println("\n\n\nstart to test dubbo - GetUser3")
 	err = userProvider1.GetUser3()
 	if err != nil {
@@ -258,6 +274,14 @@ func test2() {
 	user = &User{}
 	var i int32 = 1
 	err = userProvider2.GetUser2(context.TODO(), []interface{}{i}, user)
+	if err != nil {
+		panic(err)
+	}
+	println("response result: %v", user)
+
+	println("\n\n\nstart to test dubbo - getUser - overload")
+	user = &User{}
+	err = userProvider2.GetUser2(context.TODO(), []interface{}{i, "overload"}, user)
 	if err != nil {
 		panic(err)
 	}

@@ -106,7 +106,7 @@ public class UserProviderImpl implements UserProvider {
     }
 
     public User getUser(int usercode, String name) {
-        return new User(String.valueOf(usercode), name, 48);
+        return new User(String.valueOf(usercode), name, 38);
     }
 
     public int Calc(int a,int b) {

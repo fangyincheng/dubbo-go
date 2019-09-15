@@ -116,7 +116,7 @@ public class UserProviderAnotherImpl implements UserProvider {
     }
 
     public User getUser(int usercode, String name) {
-        return new User(String.valueOf(usercode), name, 48);
+        return new User(String.valueOf(usercode), name, 18);
     }
 
     public User queryUser(User user) {
