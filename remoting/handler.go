@@ -1,6 +1,8 @@
 package remoting
 
-import "github.com/apache/dubbo-go/common"
+import (
+	"github.com/apache/dubbo-go/common"
+)
 
 // Handler for remoting
 type Handler interface {
