@@ -3,7 +3,7 @@ package extension
 import "github.com/apache/dubbo-go/remoting"
 
 var (
-	transporters = make(map[string] func() remoting.Transporter)
+	transporters = make(map[string]func() remoting.Transporter)
 )
 
 func SetTransporter(name string, v func() remoting.Transporter) {

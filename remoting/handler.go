@@ -15,7 +15,6 @@ type Handler interface {
 /////////////////////////////
 
 type BaseHandler struct {
-
 }
 
 func (bh *BaseHandler) Send(url common.URL, message interface{}) error {

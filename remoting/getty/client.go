@@ -18,6 +18,7 @@
 package getty
 
 import (
+	"github.com/dubbogo/hessian2"
 	"strings"
 	"sync"
 	"time"
@@ -154,9 +155,7 @@ func (c *Client) Call(addr string, svcUrl common.URL, method string, args, reply
 	ct := CT_TwoWay
 	if reply == nil {
 		ct = CT_OneWay
-	}
-
-	return perrors.WithStack(c.call(ct, addr, svcUrl, method, args, reply, nil, copts))
+	}urn perrors.WithStack(c.call(ct, addr, svcUrl, method, args, reply, nil, copts))
 }
 
 func (c *Client) AsyncCall(addr string, svcUrl common.URL, method string, args interface{},
