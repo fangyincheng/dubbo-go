@@ -147,7 +147,8 @@ func NewClient(opt Options) *Client {
 		pendingResponses: new(sync.Map),
 		conf:             *clientConf,
 	}
-	c.pool = newGettyRPCClientConnPool(c, clientConf.PoolSize, time.Duration(int(time.Second)*clientConf.PoolTTL))
+	//c.pool = GetPool(, c)
+	//c.pool = newGettyRPCClientConnPool(c, clientConf.PoolSize, time.Duration(int(time.Second)*clientConf.PoolTTL))
 
 	return c
 }
